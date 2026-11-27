@@ -5,12 +5,12 @@
 ## Запуск
 
 ```powershell
-cd "C:\Работа с AI\article-platform"
+cd "C:\***\article-platform"
 python -m pip install -r requirements.txt
 python app.py
 ```
 
-Откройте http://127.0.0.1:5000
+Откройте ()
 
 **Демо-доступ:** `demo@slovo.ru` / `demo123` (кнопка «Подставить данные» на странице входа).
 
