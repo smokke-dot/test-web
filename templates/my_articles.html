@@ -1,0 +1,47 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Мои статьи — Слово{% endblock %}
+{% block dash_content %}
+<div class="dash-heading">
+  <div>
+    <span class="section-kicker">Библиотека</span>
+    <h1>Мои статьи</h1>
+    <p>Управляйте опубликованными текстами и черновиками.</p>
+  </div>
+  <a href="{{ url_for('editor_new') }}" class="btn btn-primary">+ Новая статья</a>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h2>Все статьи <span class="count-pill">{{ articles|length }}</span></h2>
+    <div class="segmented" id="statusFilter">
+      <button class="active" data-filter="all">Все</button>
+      <button data-filter="published">Опубликованные</button>
+      <button data-filter="draft">Черновики</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table article-table" id="articlesTable">
+      <thead><tr><th>Название</th><th>Категория</th><th>Статус</th><th>Просмотры</th><th>Лайки</th><th>Комм.</th><th>Действия</th></tr></thead>
+      <tbody>
+        {% for a in articles %}
+        <tr data-status="{{ a.status }}">
+          <td class="cell-title"><strong>{{ a.title }}</strong><small>обновлена {{ a.updated_at|human_date }}</small></td>
+          <td>{{ a.category }}</td>
+          <td><span class="status-badge {{ a.status }}">{{ 'Опубликована' if a.status == 'published' else 'Черновик' }}</span></td>
+          <td>◉ {{ a.views }}</td>
+          <td>♥ {{ a.likes }}</td>
+          <td>{{ a.comments_count }}</td>
+          <td class="cell-actions">
+            <a href="{{ url_for('editor', article_id=a.id) }}" class="icon-link" title="Редактировать">✏️</a>
+            {% if a.status == 'published' %}<a href="{{ url_for('article', slug=a.slug) }}" class="icon-link" title="Смотреть">👁</a>{% endif %}
+            <button class="icon-link text-danger" data-delete="{{ a.id }}" title="Удалить">🗑</button>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="table-empty">У вас пока нет статей. <a href="{{ url_for('editor_new') }}">Создайте первую</a> — это просто.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

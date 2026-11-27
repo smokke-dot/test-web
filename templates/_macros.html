@@ -1,0 +1,54 @@
+{% set cover_emojis = {'1': '📝', '2': '🌿', '3': '✍️', '4': '📚', '5': '🎨', '6': '💡', '7': '⚡', '8': '☕'} %}
+
+{% macro article_card(a) %}
+<article class="article-card">
+  <a href="{{ url_for('article', slug=a.slug) }}" class="card-cover cover-{{ a.cover }}">
+    <span>{{ cover_emojis.get(a.cover|string, '📝') }}</span>
+    <span class="cover-glow"></span>
+  </a>
+  <div class="card-body">
+    <div class="card-top">
+      <span class="category-tag">{{ a.category }}</span>
+      <span class="card-date">{{ a.published_at|human_date }}</span>
+    </div>
+    <h3 class="card-title"><a href="{{ url_for('article', slug=a.slug) }}">{{ a.title }}</a></h3>
+    <p class="card-excerpt">{{ a.excerpt }}</p>
+    {% if a.tags %}
+      <div class="card-tags">
+        {% for tag in a.tags.split(',')[:3] %}<span class="tag">#{{ tag.strip() }}</span>{% endfor %}
+      </div>
+    {% endif %}
+    <div class="card-footer">
+      <div class="card-author"><span class="avatar avatar-xs">{{ a.avatar }}</span>{{ a.username }}</div>
+      <div class="card-stats">
+        <span title="Просмотры">◉ {{ a.views }}</span>
+        <span title="Нравится">♥ {{ a.likes }}</span>
+        <span title="Время чтения">{{ a.content|read_time }} мин</span>
+      </div>
+    </div>
+  </div>
+</article>
+{% endmacro %}
+
+{% macro pagination(page, pages, endpoint, kwargs=None) %}
+{% if pages > 1 %}
+  {% set base = kwargs or {} %}
+  <nav class="pagination" aria-label="Пагинация">
+    {% if page > 1 %}
+      <a href="{{ url_for(endpoint, page=page-1, **base) }}" class="page-btn">← Назад</a>
+    {% endif %}
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}
+        <span class="page-btn active">{{ p }}</span>
+      {% elif p <= 2 or p >= pages - 1 or (p - page)|abs <= 1 %}
+        <a href="{{ url_for(endpoint, page=p, **base) }}" class="page-btn">{{ p }}</a>
+      {% elif (p - page)|abs == 2 %}
+        <span class="page-dots">…</span>
+      {% endif %}
+    {% endfor %}
+    {% if page < pages %}
+      <a href="{{ url_for(endpoint, page=page+1, **base) }}" class="page-btn">Вперёд →</a>
+    {% endif %}
+  </nav>
+{% endif %}
+{% endmacro %}

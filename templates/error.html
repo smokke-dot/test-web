@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — Слово{% endblock %}
+{% block content %}
+<div class="error-page">
+  <div class="error-code">{{ code }}</div>
+  <h1>{{ message }}</h1>
+  <p>Похоже, эта страница затерялась или никогда не существовала.</p>
+  <div class="error-actions">
+    <a href="{{ url_for('index') }}" class="btn btn-primary">На главную</a>
+    <a href="{{ url_for('index', sort='popular') }}" class="btn btn-soft">Читать популярное</a>
+  </div>
+</div>
+{% endblock %}

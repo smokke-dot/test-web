@@ -1,0 +1,60 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Статистика — Слово{% endblock %}
+{% block dash_content %}
+<div class="dash-heading">
+  <div>
+    <span class="section-kicker">Аналитика</span>
+    <h1>Статистика просмотров</h1>
+    <p>Понимайте, что читают и откуда приходят люди.</p>
+  </div>
+  <div class="segmented" id="periodSwitch">
+    <button data-days="7">7 дней</button>
+    <button class="active" data-days="30">30 дней</button>
+    <button data-days="90">90 дней</button>
+  </div>
+</div>
+
+<div class="panel chart-panel">
+  <div class="panel-head">
+    <div><h2>Динамика просмотров</h2><p>Уникальные посетители по дням</p></div>
+    <div class="chart-legend"><span class="dot"></span> Просмотры</div>
+  </div>
+  <div class="chart-wrap" data-chart="{{ chart|tojson }}"></div>
+</div>
+
+<div class="dash-two-col">
+  <div class="panel">
+    <div class="panel-head"><h2>Источники трафика</h2><p>Откуда читатели находят вас</p></div>
+    <div class="source-list">
+      {% set source_names = {'direct': 'Прямые заходы', 'search': 'Поисковые системы', 'social': 'Соцсети'} %}
+      {% set source_icons = {'direct': '🔗', 'search': '🔎', 'social': '📱'} %}
+      {% set total_sources = sources|sum(attribute='n') or 1 %}
+      {% for s in sources %}
+        <div class="source-item">
+          <div class="source-row"><span>{{ source_icons.get(s.source, '•') }} {{ source_names.get(s.source, s.source) }}</span><strong>{{ s.n }}</strong></div>
+          <div class="source-bar"><div style="width: {{ (s.n / total_sources * 100)|round|int }}%"></div></div>
+          <small>{{ (s.n / total_sources * 100)|round|int }}% от всех просмотров</small>
+        </div>
+      {% else %}
+        <p class="table-empty">Данных пока нет — опубликуйте статью и поделитесь ею.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Топ статей</h2><a href="{{ url_for('my_articles') }}" class="text-link">Все статьи →</a></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Статья</th><th>◉</th><th>♥</th><th>💬</th></tr></thead>
+        <tbody>
+          {% for a in top %}
+          <tr><td><a href="{{ url_for('editor', article_id=a.id) }}">{{ a.title }}</a></td><td>{{ a.views }}</td><td>{{ a.likes }}</td><td>{{ a.comments_count }}</td></tr>
+          {% else %}
+          <tr><td colspan="4" class="table-empty">Пока нет данных.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

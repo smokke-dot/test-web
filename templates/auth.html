@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Регистрация' if mode == 'register' else 'Вход' }} — Слово{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-panel">
+    <div class="auth-art">
+      <div class="auth-art-inner">
+        <span class="auth-badge">✍️ Ваша история начинается здесь</span>
+        <h2>Пишите. Публикуйте. <em>Растите.</em></h2>
+        <p>Присоединяйтесь к сообществу авторов, где каждый текст находит своего читателя.</p>
+        <ul class="auth-features">
+          <li><span>📊</span> Статистика просмотров в реальном времени</li>
+          <li><span>🎨</span> Удобный редактор с предпросмотром</li>
+          <li><span>🔖</span> Сохранение понравившихся статей</li>
+          <li><span>💬</span> Живые обсуждения и комментарии</li>
+        </ul>
+        <div class="auth-quote">«Самый лучший способ начать — просто начать»</div>
+      </div>
+      <div class="auth-shape shape-a"></div>
+      <div class="auth-shape shape-b"></div>
+    </div>
+
+    <div class="auth-form-side">
+      <div class="auth-form-card">
+        <span class="section-kicker">{{ 'Создать аккаунт' if mode == 'register' else 'С возвращением' }}</span>
+        <h1>{{ 'Начните писать сегодня' if mode == 'register' else 'Снова рады видеть вас' }}</h1>
+        <p class="auth-sub">{{ 'Это займёт меньше минуты.' if mode == 'register' else 'Войдите, чтобы продолжить.' }}</p>
+
+        <form method="post" class="auth-form" novalidate>
+          {% if mode == 'register' %}
+            <div class="field">
+              <label for="username">Как вас зовут</label>
+              <input id="username" name="username" type="text" value="{{ values.get('username','') }}" placeholder="Анна Ветрова" required minlength="3" maxlength="30" autocomplete="name">
+            </div>
+          {% else %}
+            <input type="hidden" name="next" value="{{ request.form.get('next', request.args.get('next','')) }}">
+          {% endif %}
+
+          <div class="field">
+            <label for="{{ 'email' if mode == 'register' else 'login' }}">{{ 'Email' if mode == 'register' else 'Email или имя пользователя' }}</label>
+            <input id="{{ 'email' if mode == 'register' else 'login' }}" name="{{ 'email' if mode == 'register' else 'login' }}" type="{{ 'email' if mode == 'register' else 'text' }}" value="{{ values.get('email', values.get('login','')) }}" placeholder="{{ 'you@example.com' if mode == 'register' else 'demo@slovo.ru' }}" required autocomplete="{{ 'email' if mode == 'register' else 'username' }}">
+          </div>
+
+          <div class="field">
+            <label for="password">Пароль</label>
+            <input id="password" name="password" type="password" placeholder="Не менее 6 символов" required minlength="6" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}">
+          </div>
+
+          {% if mode == 'register' %}
+            <div class="field">
+              <label for="confirm">Повторите пароль</label>
+              <input id="confirm" name="confirm" type="password" placeholder="Ещё раз тот же пароль" required minlength="6" autocomplete="new-password">
+            </div>
+          {% endif %}
+
+          <button class="btn btn-primary btn-block btn-lg" type="submit">
+            {{ 'Создать аккаунт' if mode == 'register' else 'Войти в аккаунт' }}
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          {% if mode == 'register' %}
+            Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+          {% else %}
+            Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a>
+          {% endif %}
+        </p>
+
+        {% if mode == 'login' %}
+          <div class="demo-box">
+            <strong>Демо-аккаунт</strong>
+            <span>demo@slovo.ru · demo123</span>
+            <button class="btn btn-soft btn-sm" id="fillDemo" type="button">Подставить данные</button>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

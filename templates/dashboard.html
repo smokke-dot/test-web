@@ -1,0 +1,75 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Личный кабинет — Слово{% endblock %}
+{% block dash_content %}
+<div class="dash-heading">
+  <div>
+    <span class="section-kicker">Личный кабинет</span>
+    <h1>Привет, {{ current_user.username }}! 👋</h1>
+    <p>Вот как идут дела с вашими статьями.</p>
+  </div>
+  <a href="{{ url_for('editor_new') }}" class="btn btn-primary">+ Написать статью</a>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon violet">📄</div>
+    <div><span>Всего статей</span><strong>{{ totals.articles }}</strong><small>{{ totals.published }} опубликовано</small></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon blue">◉</div>
+    <div><span>Просмотры</span><strong>{{ '{:,}'.format(totals.views).replace(',', ' ') }}</strong><small>за всё время</small></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon pink">♥</div>
+    <div><span>Нравится</span><strong>{{ totals.likes }}</strong><small>от читателей</small></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green">💬</div>
+    <div><span>Комментарии</span><strong>{{ recent_comments|length }}</strong><small>последние 4</small></div>
+  </div>
+</div>
+
+<div class="panel chart-panel">
+  <div class="panel-head">
+    <div><h2>Просмотры за 14 дней</h2><p>Уникальные посещения ваших статей</p></div>
+    <a href="{{ url_for('stats_page') }}" class="text-link">Подробная статистика →</a>
+  </div>
+  <div class="chart-wrap" data-chart="{{ chart|tojson }}"></div>
+</div>
+
+<div class="dash-two-col">
+  <div class="panel">
+    <div class="panel-head"><h2>Последние статьи</h2><a href="{{ url_for('my_articles') }}" class="text-link">Все →</a></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Статья</th><th>Статус</th><th>Просмотры</th><th>Лайки</th></tr></thead>
+        <tbody>
+          {% for a in articles %}
+          <tr>
+            <td><a href="{{ url_for('editor', article_id=a.id) }}">{{ a.title }}</a><small>{{ a.updated_at|human_date }}</small></td>
+            <td><span class="status-badge {{ a.status }}">{{ 'Опубликована' if a.status == 'published' else 'Черновик' }}</span></td>
+            <td>◉ {{ a.views }}</td>
+            <td>♥ {{ a.likes }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="table-empty">Статей пока нет. <a href="{{ url_for('editor_new') }}">Напишите первую</a>.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Свежие комментарии</h2></div>
+    <div class="mini-feed">
+      {% for c in recent_comments %}
+        <div class="mini-feed-item">
+          <span class="avatar avatar-sm">{{ c.avatar }}</span>
+          <div><strong>{{ c.username }}</strong> к статье «<a href="{{ url_for('article', slug=c.slug) }}">{{ c.title }}</a>»<p>{{ c.content[:110] }}</p><small>{{ c.created_at|human_date }}</small></div>
+        </div>
+      {% else %}
+        <p class="table-empty">Комментариев пока нет.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

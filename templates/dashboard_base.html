@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container dash-shell">
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar-head">
+      <span class="avatar avatar-lg">{{ current_user.avatar }}</span>
+      <div><strong>{{ current_user.username }}</strong><small>Автор на «Слове»</small></div>
+    </div>
+    <a href="{{ url_for('editor_new') }}" class="btn btn-primary btn-block">✍️ Новая статья</a>
+    <nav class="dash-nav">
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if section == 'overview' }}"><span>🏠</span> Обзор</a>
+      <a href="{{ url_for('my_articles') }}" class="{{ 'active' if section == 'articles' }}"><span>📄</span> Мои статьи</a>
+      <a href="{{ url_for('stats_page') }}" class="{{ 'active' if section == 'stats' }}"><span>📊</span> Статистика</a>
+      <a href="{{ url_for('monetization') }}" class="{{ 'active' if section == 'monetization' }}"><span>💰</span> Монетизация</a>
+      {% if current_user.is_admin %}
+        <a href="{{ url_for('admin_payouts') }}"><span>🛠</span> Выплаты (админ)</a>
+      {% endif %}
+      <a href="{{ url_for('saved') }}" class="{{ 'active' if section == 'saved' }}"><span>🔖</span> Сохранённое</a>
+      <a href="{{ url_for('profile') }}" class="{{ 'active' if section == 'profile' }}"><span>⚙️</span> Профиль</a>
+    </nav>
+    <div class="sidebar-tip">
+      <span>💡</span>
+      <p><strong>Совет автора</strong><br>Публикуйте регулярно — читатели возвращаются к тем, кто не молчит.</p>
+    </div>
+    <a href="{{ url_for('index') }}" class="back-link">← На сайт</a>
+  </aside>
+
+  <div class="dash-content">
+    {% block dash_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

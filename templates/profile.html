@@ -1,0 +1,59 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Профиль — Слово{% endblock %}
+{% block dash_content %}
+<div class="dash-heading">
+  <div><span class="section-kicker">Настройки</span><h1>Мой профиль</h1><p>Расскажите о себе — это увидят читатели ваших статей.</p></div>
+</div>
+
+<div class="profile-layout">
+  <div class="panel profile-card">
+    <div class="panel-head"><h2>Личные данные</h2></div>
+    <form method="post" class="settings-form">
+      <div class="field">
+        <label for="username">Имя автора</label>
+        <input id="username" name="username" value="{{ profile.username }}" required minlength="3" maxlength="30">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" value="{{ profile.email }}" required>
+      </div>
+      <div class="field">
+        <label for="bio">О себе</label>
+        <textarea id="bio" name="bio" rows="4" maxlength="500" placeholder="Пара предложений о том, что вы пишете">{{ profile.bio }}</textarea>
+        <small class="field-hint">Максимум 500 символов</small>
+      </div>
+      <div class="field">
+        <label>Аватар (эмодзи)</label>
+        <div class="avatar-picker" id="avatarPicker">
+          {% for em in ['✍️','📝','📚','💡','🎨','🌿','☕','⚡','🔥','🧠','🦊','🌙'] %}
+            <button type="button" class="avatar-option {{ 'active' if profile.avatar == em }}" data-avatar="{{ em }}">{{ em }}</button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="avatar" id="avatarInput" value="{{ profile.avatar }}">
+      </div>
+      <div class="form-divider"><span>Смена пароля</span></div>
+      <div class="field">
+        <label for="password">Новый пароль <small>(оставьте пустым, чтобы не менять)</small></label>
+        <input id="password" name="password" type="password" minlength="6" placeholder="Не менее 6 символов" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" type="submit">Сохранить изменения</button>
+    </form>
+  </div>
+
+  <div class="profile-side">
+    <div class="panel preview-card">
+      <span class="section-kicker">Предпросмотр</span>
+      <div class="preview-author">
+        <span class="avatar avatar-xl" id="avatarPreview">{{ profile.avatar }}</span>
+        <div><h3 id="namePreview">{{ profile.username }}</h3><p id="bioPreview">{{ profile.bio or 'Здесь будет ваше описание.' }}</p></div>
+      </div>
+    </div>
+    <div class="panel account-meta">
+      <h4>Информация об аккаунте</h4>
+      <div><span>Дата регистрации</span><strong>{{ profile.created_at|human_date }}</strong></div>
+      <div><span>Email</span><strong>{{ profile.email }}</strong></div>
+      <div><span>Роль</span><strong>Автор</strong></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

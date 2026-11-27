@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}{{ article.meta_title or article.title }}{% endblock %}
+{% block description %}{{ article.meta_description or article.excerpt }}{% endblock %}
+{% block canonical %}{{ url_for('article', slug=article.slug, _external=True) }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ article.meta_title or article.title }}{% endblock %}
+{% block og_description %}{{ article.meta_description or article.excerpt }}{% endblock %}
+{% block twitter_title %}{{ article.meta_title or article.title }}{% endblock %}
+{% block twitter_description %}{{ article.meta_description or article.excerpt }}{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": {{ article.title|tojson }},
+  "description": {{ (article.meta_description or article.excerpt)|tojson }},
+  "articleSection": {{ article.category|tojson }},
+  "keywords": {{ article.tags|tojson }},
+  "wordCount": {{ article.content|word_count }},
+  "datePublished": {{ article.published_at|iso_date|tojson }},
+  "dateModified": {{ article.updated_at|iso_date|tojson }},
+  "mainEntityOfPage": {{ url_for('article', slug=article.slug, _external=True)|tojson }},
+  "author": { "@type": "Person", "name": {{ article.username|tojson }} },
+  "publisher": { "@type": "Organization", "name": "Слово" },
+  "interactionStatistic": {
+    "@type": "InteractionCounter",
+    "interactionType": "https://schema.org/ViewAction",
+    "userInteractionCount": {{ article.views }}
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="reading-progress"><div class="reading-progress-bar" id="readingProgress"></div></div>
+
+<div class="container article-page">
+  <nav class="breadcrumbs">
+    <a href="{{ url_for('index') }}">Главная</a><span>/</span>
+    <a href="{{ url_for('index', cat=article.category) }}">{{ article.category }}</a><span>/</span>
+    <span>Статья</span>
+  </nav>
+
+  <div class="article-layout">
+    <div class="article-main">
+      <header class="article-header">
+        <div class="article-header-top">
+          <span class="category-tag big">{{ article.category }}</span>
+          <span class="status-pill">Опубликовано {{ article.published_at|human_date }}</span>
+        </div>
+        <h1>{{ article.title }}</h1>
+        <p class="article-lead">{{ article.excerpt }}</p>
+        <div class="article-byline">
+          <span class="avatar avatar-md">{{ article.avatar }}</span>
+          <div class="byline-text">
+            <strong>{{ article.username }}</strong>
+            <small>{{ article.bio }}</small>
+          </div>
+          <div class="byline-meta">
+            <span>🕒 {{ article.content|read_time }} мин чтения</span>
+            <span>◉ {{ article.views }} просмотров</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="article-cover cover-{{ article.cover }}">
+        <span>📖</span>
+      </div>
+
+      <div class="prose" id="articleBody">
+        {{ content_html|safe }}
+      </div>
+
+      {% if article.tags %}
+      <div class="article-tags">
+        {% for tag in article.tags.split(',') %}<a href="{{ url_for('index', q=tag.strip()) }}" class="tag">#{{ tag.strip() }}</a>{% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="action-bar">
+        <button class="action-btn {{ 'active' if liked }}" data-action="like" data-id="{{ article.id }}">
+          <span class="action-icon">♥</span><span id="likeCount">{{ article.likes }}</span>
+        </button>
+        <button class="action-btn {{ 'active' if bookmarked }}" data-action="bookmark" data-id="{{ article.id }}">
+          <span class="action-icon">🔖</span><span>{{ 'Сохранено' if bookmarked else 'Сохранить' }}</span>
+        </button>
+        <button class="action-btn" data-action="share" data-id="{{ article.id }}">
+          <span class="action-icon">↗</span><span>Поделиться</span>
+        </button>
+        <a href="#comments" class="action-btn"><span class="action-icon">💬</span>{{ article.comments_count }} комментариев</a>
+      </div>
+
+      <div class="author-box">
+        <span class="avatar avatar-lg">{{ article.avatar }}</span>
+        <div>
+          <span class="section-kicker">Об авторе</span>
+          <h3>{{ article.username }}</h3>
+          <p>{{ article.bio }}</p>
+        </div>
+        <div class="author-box-actions">
+          {% if current_user %}
+            {% if current_user.id != article.user_id %}
+              <button class="btn {{ 'btn-soft' if is_following else 'btn-primary' }} btn-sm" data-follow="{{ article.user_id }}">
+                {{ '✓ Вы подписаны' if is_following else '+ Подписаться' }} <span class="follow-count">({{ followers }})</span>
+              </button>
+            {% endif %}
+          {% else %}
+            <a href="{{ url_for('login', next=request.path) }}" class="btn btn-soft btn-sm">+ Подписаться</a>
+          {% endif %}
+          <a href="{{ url_for('index', q=article.username) }}" class="btn btn-soft btn-sm">Все статьи</a>
+        </div>
+      </div>
+
+      <section class="comments" id="comments">
+        <h2>Обсуждение <span>{{ article.comments_count }}</span></h2>
+        {% if current_user %}
+          <form class="comment-form" id="commentForm" data-id="{{ article.id }}">
+            <span class="avatar avatar-md">{{ current_user.avatar }}</span>
+            <div class="comment-input-wrap">
+              <textarea name="content" id="commentText" rows="3" placeholder="Напишите комментарий…" maxlength="1500"></textarea>
+              <div class="comment-form-bottom">
+                <small>Будьте добры и конструктивны</small>
+                <button class="btn btn-primary btn-sm" type="submit">Отправить</button>
+              </div>
+            </div>
+          </form>
+        {% else %}
+          <div class="login-hint">
+            <span>💬</span>
+            <div><strong>Хотите участвовать в обсуждении?</strong><br><small><a href="{{ url_for('login', next=request.path) }}">Войдите</a> или <a href="{{ url_for('register') }}">зарегистрируйтесь</a>, чтобы оставить комментарий.</small></div>
+          </div>
+        {% endif %}
+
+        <div class="comment-list" id="commentList">
+          {% for c in comments %}
+            <div class="comment">
+              <span class="avatar avatar-md">{{ c.avatar }}</span>
+              <div class="comment-body">
+                <div class="comment-head"><strong>{{ c.username }}</strong><small>{{ c.created_at|human_date }}</small></div>
+                <p>{{ c.content }}</p>
+              </div>
+            </div>
+          {% else %}
+            <p class="no-comments">Комментариев пока нет. Будьте первым!</p>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    <aside class="article-aside">
+      {% if toc %}
+      <div class="toc-card sticky">
+        <h4>Содержание</h4>
+        <ul>
+          {% for level, title, anchor in toc %}
+            <li class="toc-level-{{ level }}"><a href="#{{ anchor }}">{{ title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      <div class="aside-card">
+        <h4>Читайте также</h4>
+        {% for a in related %}
+          <a href="{{ url_for('article', slug=a.slug) }}" class="mini-article">
+            <span class="mini-cover cover-{{ a.cover }}">📄</span>
+            <span><strong>{{ a.title }}</strong><small>◉ {{ a.views }} · {{ a.content|read_time }} мин</small></span>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="aside-card support-card">
+        <h4>💛 Поддержать автора</h4>
+        <p>Понравилась статья? Отправьте тестовые кредиты автору — это мотивирует писать дальше.</p>
+        {% if current_user %}
+          <div class="tip-options">
+            {% for amount in tip_amounts %}
+              <button class="tip-option" data-tip="{{ amount }}" data-author="{{ article.user_id }}" data-article="{{ article.id }}">{{ amount }}</button>
+            {% endfor %}
+          </div>
+          <div class="tip-custom">
+            <input type="number" id="tipCustom" min="10" max="1000" placeholder="Своя сумма" aria-label="Своя сумма">
+            <button class="btn btn-primary btn-sm" data-tip="custom" data-author="{{ article.user_id }}" data-article="{{ article.id }}">Отправить</button>
+          </div>
+          {% if current_user.id == article.user_id %}<small class="tip-note">Это ваша статья — поддержка доступна другим читателям.</small>{% endif %}
+        {% else %}
+          <a href="{{ url_for('login', next=request.path) }}" class="btn btn-primary btn-block btn-sm">Войти, чтобы поддержать</a>
+        {% endif %}
+        <small class="tip-note">Тестовый режим: реальные деньги не используются.</small>
+      </div>
+
+      <div class="aside-card aside-cta">
+        <h4>Пишете сами?</h4>
+        <p>Ваша статья может быть следующей.</p>
+        <a href="{{ url_for('editor_new') }}" class="btn btn-primary btn-block">Написать статью</a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+{% if related %}
+<section class="container related-section">
+  <div class="section-head"><h2>Похожие статьи</h2><a href="{{ url_for('index') }}" class="text-link">Все статьи →</a></div>
+  <div class="articles-grid three">
+    {% for a in related %}{{ article_card(a) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

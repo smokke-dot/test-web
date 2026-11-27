@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Редактирование статьи' if article else 'Новая статья' }} — Слово{% endblock %}
+
+{% block content %}
+<div class="editor-page" id="editorPage" data-id="{{ article.id if article else '' }}">
+  <div class="editor-topbar">
+    <div class="editor-topbar-left">
+      <a href="{{ url_for('my_articles') }}" class="btn btn-ghost btn-sm">← К статьям</a>
+      <span class="editor-status {{ 'published' if article and article.status == 'published' else 'draft' }}" id="editorStatus">
+        {{ 'Опубликована' if article and article.status == 'published' else 'Черновик' }}
+      </span>
+      <span class="save-hint" id="saveHint">Все изменения сохранены</span>
+    </div>
+    <div class="editor-topbar-right">
+      <button class="btn btn-soft" id="saveDraft">Сохранить черновик</button>
+      <button class="btn btn-primary" id="publishBtn">{{ 'Обновить статью' if article else 'Опубликовать' }}</button>
+    </div>
+  </div>
+
+  <div class="container editor-grid">
+    <div class="editor-main panel">
+      <input type="text" id="articleTitle" class="title-input" placeholder="Заголовок вашей статьи…" maxlength="200" value="{{ article.title if article else '' }}">
+      <textarea id="articleExcerpt" class="excerpt-input" rows="2" maxlength="500" placeholder="Короткое описание, которое увидят читатели в ленте…">{{ article.excerpt if article else '' }}</textarea>
+
+      <div class="editor-toolbar" id="editorToolbar">
+        <button type="button" data-md="bold" title="Жирный"><strong>B</strong></button>
+        <button type="button" data-md="italic" title="Курсив"><em>I</em></button>
+        <span class="toolbar-sep"></span>
+        <button type="button" data-md="h2" title="Заголовок">H2</button>
+        <button type="button" data-md="h3" title="Подзаголовок">H3</button>
+        <span class="toolbar-sep"></span>
+        <button type="button" data-md="ul" title="Список">☰</button>
+        <button type="button" data-md="quote" title="Цитата">❝</button>
+        <button type="button" data-md="code" title="Код">&lt;/&gt;</button>
+        <button type="button" data-md="link" title="Ссылка">🔗</button>
+        <span class="toolbar-sep"></span>
+        <button type="button" id="previewToggle" class="preview-toggle">👁 Предпросмотр</button>
+      </div>
+
+      <div class="editor-views">
+        <textarea id="articleContent" class="content-input" placeholder="Начните писать здесь. Поддерживается Markdown: # заголовки, **жирный**, списки, цитаты и код.">{{ article.content if article else '' }}</textarea>
+        <div class="preview-pane prose" id="previewPane" hidden></div>
+      </div>
+
+      <div class="editor-footer-stats">
+        <span id="wordCount">0 слов</span><span>·</span><span id="readTime">~1 мин чтения</span><span>·</span><span>Автосохранение включено</span>
+      </div>
+    </div>
+
+    <aside class="editor-side">
+      <div class="panel settings-panel">
+        <h3>Настройки статьи</h3>
+        <div class="field">
+          <label for="articleCategory">Категория</label>
+          <input id="articleCategory" list="categoryList" value="{{ article.category if article else 'Разное' }}" placeholder="Разное">
+          <datalist id="categoryList">
+            <option value="Письмо"></option><option value="Дизайн"></option><option value="Жизнь"></option>
+            <option value="Технологии"></option><option value="Разное"></option>
+          </datalist>
+        </div>
+        <div class="field">
+          <label for="articleTags">Теги <small>через запятую</small></label>
+          <input id="articleTags" value="{{ article.tags if article else '' }}" placeholder="писательство, советы">
+        </div>
+        <div class="field">
+          <label>Обложка</label>
+          <div class="cover-picker" id="coverPicker">
+            {% for num in range(1, 9) %}
+              {% set emojis = {'1':'📝','2':'🌿','3':'✍️','4':'📚','5':'🎨','6':'💡','7':'⚡','8':'☕'} %}
+              <button type="button" class="cover-option cover-{{ num }} {{ 'active' if (article.cover if article else '1')|string == num|string }}" data-cover="{{ num }}">{{ emojis[num] }}</button>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="field">
+          <label for="articleStatus">Статус</label>
+          <select id="articleStatus">
+            <option value="draft" {{ 'selected' if not article or article.status == 'draft' }}>Черновик — виден только вам</option>
+            <option value="published" {{ 'selected' if article and article.status == 'published' }}>Опубликована — видна всем</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel seo-panel">
+        <h3>🔎 SEO и выдача</h3>
+        <p class="seo-intro">Эти поля помогают поисковикам понять статью.</p>
+        <div class="field">
+          <label for="metaTitle">SEO-заголовок</label>
+          <input id="metaTitle" maxlength="200" placeholder="До 60 символов" value="{{ article.meta_title if article else '' }}">
+          <small class="field-hint" id="seoTitleHint">Рекомендуется 25–60 символов</small>
+        </div>
+        <div class="field">
+          <label for="metaDescription">Описание для поиска</label>
+          <textarea id="metaDescription" rows="3" maxlength="300" placeholder="До 155 символов">{{ article.meta_description if article else '' }}</textarea>
+          <small class="field-hint" id="seoDescHint">Рекомендуется 70–155 символов</small>
+        </div>
+        <div class="field">
+          <label for="focusKeyword">Ключевой запрос</label>
+          <input id="focusKeyword" maxlength="100" placeholder="например: как писать статьи" value="{{ article.focus_keyword if article else '' }}">
+        </div>
+        <div class="seo-checklist" id="seoChecklist">
+          <div data-check="title">✓ Заголовок 25–60 символов</div>
+          <div data-check="desc">✓ Описание 70–155 символов</div>
+          <div data-check="keyword">✓ Ключевой запрос в заголовке</div>
+          <div data-check="content">✓ В тексте не менее 300 слов</div>
+        </div>
+      </div>
+
+      <div class="panel tips-panel">
+        <h3>💡 Полезно знать</h3>
+        <ul>
+          <li>Первый абзац цепляет читателя — начинайте с интриги.</li>
+          <li>Разделяйте текст подзаголовками каждые 200–300 слов.</li>
+          <li>Черновик можно сохранять сколько угодно раз.</li>
+          <li>Статистика обновляется после каждого просмотра.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

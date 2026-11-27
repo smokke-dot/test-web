@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Выплаты — админ — Слово{% endblock %}
+{% block content %}
+<div class="container admin-page">
+  <div class="dash-heading">
+    <div>
+      <span class="section-kicker">Админ-панель · тестовый режим</span>
+      <h1>Заявки на выплаты</h1>
+      <p>Одобряйте или отклоняйте заявки. При отклонении кредиты возвращаются автору.</p>
+    </div>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-soft">В кабинет</a>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-icon violet">📥</div><div><span>Всего заявок</span><strong>{{ payouts|length }}</strong></div></div>
+    <div class="stat-card"><div class="stat-icon yellow">⏳</div><div><span>Ожидают</span><strong>{{ payouts|selectattr('status','equalto','pending')|list|length }}</strong></div></div>
+    <div class="stat-card"><div class="stat-icon green">✓</div><div><span>Выплачено</span><strong>{{ payouts|selectattr('status','equalto','paid')|list|length }}</strong></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Реестр заявок</h2></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>№</th><th>Автор</th><th>Сумма</th><th>Способ</th><th>Статус</th><th>Действия</th></tr></thead>
+        <tbody>
+          {% for p in payouts %}
+          <tr>
+            <td>#{{ p.id }}</td>
+            <td><strong>{{ p.username }}</strong><small>{{ p.email }}</small></td>
+            <td>{{ p.amount }} ◈</td>
+            <td>{{ p.method }}</td>
+            <td><span class="status-badge {{ p.status }}">{{ {'pending':'На обработке','paid':'Выплачено','rejected':'Отклонена'}.get(p.status, p.status) }}</span></td>
+            <td>
+              {% if p.status == 'pending' %}
+                <form method="post" action="{{ url_for('process_payout', payout_id=p.id) }}" class="inline-form">
+                  <button name="action" value="paid" class="btn btn-primary btn-sm">Выплатить</button>
+                  <button name="action" value="rejected" class="btn btn-ghost btn-sm text-danger">Отклонить</button>
+                </form>
+              {% else %}
+                <small>{{ p.processed_at|human_date if p.processed_at else '—' }}</small>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="table-empty">Заявок пока нет.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

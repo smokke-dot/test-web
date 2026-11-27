@@ -1,0 +1,25 @@
+{% extends "dashboard_base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}Сохранённое — Слово{% endblock %}
+{% block dash_content %}
+<div class="dash-heading">
+  <div>
+    <span class="section-kicker">Ваша подборка</span>
+    <h1>Сохранённые статьи</h1>
+    <p>Всё, что вы отметили как интересное, в одном месте.</p>
+  </div>
+</div>
+
+{% if articles %}
+  <div class="panel"><div class="articles-grid saved-grid">
+    {% for a in articles %}{{ article_card(a) }}{% endfor %}
+  </div></div>
+{% else %}
+  <div class="empty-state panel">
+    <div class="empty-icon">🔖</div>
+    <h3>Пока пусто</h3>
+    <p>Нажмите «Сохранить» под понравившейся статьёй — и она появится здесь.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Найти статьи</a>
+  </div>
+{% endif %}
+{% endblock %}

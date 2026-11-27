@@ -1,0 +1,108 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Монетизация — Слово{% endblock %}
+{% block dash_content %}
+<div class="dash-heading">
+  <div>
+    <span class="section-kicker">Доход автора</span>
+    <h1>Монетизация <span class="test-badge">ТЕСТОВЫЙ РЕЖИМ</span></h1>
+    <p>Все суммы — учебные кредиты. Реальные деньги не используются.</p>
+  </div>
+</div>
+
+<div class="wallet-hero">
+  <div class="wallet-main">
+    <span>Доступно на балансе</span>
+    <strong>◈ {{ wallet.balance }}</strong>
+    <small>кредитов для вывода или поддержки других авторов</small>
+  </div>
+  <div class="wallet-side">
+    <div><span>Заработано всего</span><strong>{{ wallet.total_earned }}</strong></div>
+    <a href="#payoutForm" class="btn btn-light">💸 Запросить выплату</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-icon pink">💛</div><div><span>Поддержка читателей</span><strong>{{ totals.tips }}</strong><small>входящие переводы</small></div></div>
+  <div class="stat-card"><div class="stat-icon blue">◉</div><div><span>Начисления за просмотры</span><strong>{{ totals.rewards }}</strong><small>дневной пул авторов</small></div></div>
+  <div class="stat-card"><div class="stat-icon violet">🎁</div><div><span>Бонусы за публикации</span><strong>{{ totals.bonuses }}</strong><small>50 за каждую статью</small></div></div>
+  <div class="stat-card"><div class="stat-icon green">👥</div><div><span>Подписчики</span><strong>{{ followers }}</strong><small>читают новое первыми</small></div></div>
+</div>
+
+<div class="panel chart-panel">
+  <div class="panel-head"><div><h2>Доходы по дням</h2><p>Все действия с кредитами, которые принесли вам доход</p></div></div>
+  <div class="chart-wrap" data-chart="{{ chart|tojson }}"></div>
+</div>
+
+<div class="dash-two-col">
+  <div class="panel" id="payoutForm">
+    <div class="panel-head"><div><h2>Запрос на выплату</h2><p>Минимум {{ min_payout }} кредитов · обработка вручную админом</p></div></div>
+    <form method="post" action="{{ url_for('request_payout') }}" class="settings-form">
+      <div class="field">
+        <label for="payoutAmount">Сумма к выводу</label>
+        <input id="payoutAmount" name="amount" type="number" min="{{ min_payout }}" max="{{ wallet.balance }}" value="{{ wallet.balance if wallet.balance >= min_payout else min_payout }}" required>
+        <small class="field-hint">Доступно: {{ wallet.balance }} кредитов</small>
+      </div>
+      <div class="field">
+        <label for="payoutMethod">Способ получения (тестовый)</label>
+        <select id="payoutMethod" name="method">
+          <option>Карта •••• 4242</option>
+          <option>Карта •••• 1199</option>
+          <option>Электронный кошелёк</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">Отправить заявку</button>
+      <p class="fine-print">Одновременно может быть только одна заявка на обработке. После отклонения кредиты возвращаются.</p>
+    </form>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Как это работает</h2></div>
+    <ul class="rules-list">
+      <li><strong>Поддержка.</strong> Читатель отправляет вам 50–1000 кредитов, вы получаете всю сумму.</li>
+      <li><strong>Просмотры.</strong> Каждый день между авторами распределяется пул из 100 кредитов пропорционально уникальным просмотрам.</li>
+      <li><strong>Публикации.</strong> Первая публикация статьи приносит бонус 50 кредитов.</li>
+      <li><strong>Выплаты.</strong> Заявка от {{ min_payout }} кредитов обрабатывается админом в тестовом интерфейсе.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h2>История операций</h2><small class="muted">Последние 30</small></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Операция</th><th>Сумма</th><th>Участник / статья</th><th>Дата</th></tr></thead>
+      <tbody>
+        {% set labels = {'tip_in':'Поддержка получена','tip_out':'Поддержка отправлена','view_reward':'Начисление за просмотры','bonus':'Бонус за публикацию','payout':'Выплата','refund':'Возврат','topup':'Стартовые кредиты'} %}
+        {% for t in transactions %}
+          <tr>
+            <td><span class="tx-badge tx-{{ t.type }}">{{ labels.get(t.type, t.type) }}</span><small>{{ t.description }}</small></td>
+            <td class="{{ 'positive' if t.amount > 0 else 'negative' }}">{{ '+' if t.amount > 0 else '' }}{{ t.amount }} ◈</td>
+            <td>{{ t.counterparty or '—' }}</td>
+            <td>{{ t.created_at|human_date }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="table-empty">Операций пока нет. Опубликуйте статью или попросите поддержки.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><h2>Заявки на выплату</h2></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>№</th><th>Сумма</th><th>Способ</th><th>Статус</th><th>Дата</th></tr></thead>
+      <tbody>
+        {% for p in payouts %}
+          <tr><td>#{{ p.id }}</td><td>{{ p.amount }} ◈</td><td>{{ p.method }}</td>
+              <td><span class="status-badge {{ p.status }}">{{ {'pending':'На обработке','paid':'Выплачено','rejected':'Отклонена'}.get(p.status, p.status) }}</span></td>
+              <td>{{ p.created_at|human_date }}</td></tr>
+        {% else %}
+          <tr><td colspan="5" class="table-empty">Заявок ещё не было.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pagination %}
+{% block title %}Слово — статьи, которые стоит прочитать{% endblock %}
+
+{% block subnav %}
+<div class="category-bar">
+  <div class="container category-bar-inner">
+    <nav class="category-scroll" aria-label="Категории">
+      <a href="{{ url_for('index') }}" class="cat-pill {{ 'active' if not cat and not q and not following and sort in ('smart','new') }}">Все темы</a>
+      {% for c in categories %}
+        <a href="{{ url_for('index', cat=c, q=q, sort=sort) }}" class="cat-pill {{ 'active' if cat == c }}">{{ c }}</a>
+      {% endfor %}
+    </nav>
+    <form class="category-search" action="{{ url_for('index') }}" method="get" role="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" name="q" value="{{ q }}" placeholder="Поиск по статьям" aria-label="Поиск по статьям">
+      {% if sort != 'new' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+{% set emojis = {'1':'📝','2':'🌿','3':'✍️','4':'📚','5':'🎨','6':'💡','7':'⚡','8':'☕'} %}
+<div class="container feed-shell">
+
+  <aside class="feed-left">
+    <nav class="rail-nav">
+      <a href="{{ url_for('index') }}" class="rail-item {{ 'active' if not following and sort in ('smart','new') }}"><span>🏠</span> Главная</a>
+      <a href="{{ url_for('index', following=1) }}" class="rail-item {{ 'active' if following }}"><span>➕</span> Подписки</a>
+      <a href="{{ url_for('index', sort='popular') }}" class="rail-item {{ 'active' if sort == 'popular' }}"><span>🔥</span> Популярное</a>
+      <a href="{{ url_for('index', sort='liked') }}" class="rail-item {{ 'active' if sort == 'liked' }}"><span>♥</span> Одобренное</a>
+      <a href="{{ url_for('index', sort='discussed') }}" class="rail-item {{ 'active' if sort == 'discussed' }}"><span>💬</span> Обсуждаемое</a>
+      <a href="{{ url_for('saved') }}" class="rail-item"><span>🔖</span> Сохранённое</a>
+    </nav>
+    <div class="rail-divider"></div>
+    <div class="rail-label">Автору</div>
+    <nav class="rail-nav">
+      <a href="{{ url_for('editor_new') }}" class="rail-item"><span>✍️</span> Написать статью</a>
+      {% if current_user %}
+        <a href="{{ url_for('my_articles') }}" class="rail-item"><span>📄</span> Мои статьи</a>
+        <a href="{{ url_for('stats_page') }}" class="rail-item"><span>📊</span> Статистика</a>
+        <a href="{{ url_for('profile') }}" class="rail-item"><span>⚙️</span> Профиль</a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="rail-item"><span>🚀</span> Стать автором</a>
+      {% endif %}
+    </nav>
+    <div class="rail-divider"></div>
+    <div class="rail-label">Темы</div>
+    <div class="rail-topics">
+      {% for c in categories[:6] %}
+        <a href="{{ url_for('index', cat=c) }}" class="rail-topic"># {{ c }}</a>
+      {% endfor %}
+    </div>
+    <div class="rail-mini-stats">
+      <strong>{{ '{:,}'.format(stats.views).replace(',', ' ') }}</strong>
+      <span>просмотров на платформе</span>
+    </div>
+  </aside>
+
+  <main class="feed-center">
+    <div class="feed-toolbar">
+      <div>
+        <h1>{% if following %}Лента подписок{% elif q %}Поиск: «{{ q }}»{% elif cat %}{{ cat }}{% else %}Интересное{% endif %}</h1>
+        <p>{{ total }} {{ total|plural('статья,статьи,статей') }}{% if sort == 'smart' %} · с учётом ваших интересов{% elif sort == 'popular' %} · по просмотрам{% elif sort == 'liked' %} · по лайкам{% elif sort == 'discussed' %} · по обсуждению{% endif %}</p>
+      </div>
+      <form class="sort-form" action="{{ url_for('index') }}" method="get">
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+        <select name="sort" aria-label="Сортировка" onchange="this.form.submit()">
+          <option value="smart" {{ 'selected' if sort == 'smart' }}>По интересам (умная лента)</option>
+          <option value="new" {{ 'selected' if sort == 'new' }}>Сначала новые</option>
+          <option value="popular" {{ 'selected' if sort == 'popular' }}>По просмотрам</option>
+          <option value="liked" {{ 'selected' if sort == 'liked' }}>По лайкам</option>
+          <option value="discussed" {{ 'selected' if sort == 'discussed' }}>По обсуждениям</option>
+        </select>
+      </form>
+    </div>
+
+    {% if articles %}
+      <div class="feed-list">
+        {% for a in articles %}
+        <article class="feed-card">
+          <a href="{{ url_for('article', slug=a.slug) }}" class="feed-cover cover-{{ a.cover }}">
+            <span class="cover-emoji">{{ emojis.get(a.cover|string, '📝') }}</span>
+            <span class="cover-category">{{ a.category }}</span>
+          </a>
+          <div class="feed-card-body">
+            <div class="channel-line">
+              <span class="avatar avatar-xs">{{ a.avatar }}</span>
+              <strong>{{ a.username }}</strong>
+              <span class="dot">·</span>
+              <span>{{ a.published_at|human_date }}</span>
+            </div>
+            <h2><a href="{{ url_for('article', slug=a.slug) }}">{{ a.title }}</a></h2>
+            <p class="feed-excerpt">{{ a.excerpt }}</p>
+            <div class="feed-card-footer">
+              <div class="feed-tags">
+                {% for tag in a.tags.split(',')[:2] %}<span class="tag">#{{ tag.strip() }}</span>{% endfor %}
+              </div>
+              <div class="feed-reactions">
+                <span title="Просмотры">◉ {{ a.views }}</span>
+                <span title="Нравится">♥ {{ a.likes }}</span>
+                <span title="Комментарии">💬 {{ a.comments_count }}</span>
+                <span title="Время чтения">{{ a.content|read_time }} мин</span>
+              </div>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {{ pagination(page, pages, 'index', {'q': q, 'cat': cat, 'sort': sort, 'following': 1 if following else ''}) }}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>{% if following %}Здесь пока пусто{% else %}Ничего не нашлось{% endif %}</h3>
+        <p>{% if following %}Подпишитесь на понравившихся авторов — их статьи появятся здесь.{% else %}Попробуйте изменить запрос или посмотрите все статьи.{% endif %}</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Показать все статьи</a>
+      </div>
+    {% endif %}
+  </main>
+
+  <aside class="feed-right">
+    <div class="right-card">
+      <h3>🔥 В тренде</h3>
+      {% for a in featured %}
+        <a href="{{ url_for('article', slug=a.slug) }}" class="trend-row">
+          <span class="trend-num">{{ loop.index }}</span>
+          <span><strong>{{ a.title }}</strong><small>◉ {{ a.views }} просмотров</small></span>
+        </a>
+      {% endfor %}
+    </div>
+
+    <div class="right-card">
+      <h3>✍️ Авторы</h3>
+      {% for u in authors %}
+        <a href="{{ url_for('index', q=u.username) }}" class="author-row">
+          <span class="avatar avatar-md">{{ u.avatar }}</span>
+          <span><strong>{{ u.username }}</strong><small>{{ u.articles }} статей · {{ '{:,}'.format(u.views).replace(',', ' ') }} просмотров</small></span>
+        </a>
+      {% endfor %}
+    </div>
+
+    <div class="right-card right-cta">
+      <span>Ваша статья здесь?</span>
+      <h3>Начните писать сегодня</h3>
+      <p>Редактор, статистика и ваша аудитория — в одном месте.</p>
+      <a href="{{ url_for('editor_new') }}" class="btn btn-primary btn-block">Создать статью</a>
+    </div>
+
+    <div class="right-card algo-card">
+      <h3>🧠 Как работает лента</h3>
+      <p>Мы сортируем статьи не только по дате:</p>
+      <ul>
+        <li><strong>Свежесть</strong> — новые статьи получают boost, но не вытесняют хорошие старые;</li>
+        <li><strong>Вовлечённость</strong> — просмотры, лайки и комментарии;</li>
+        <li><strong>Интересы</strong> — подписки, сохранённое и темы, которые вы читали;</li>
+        <li><strong>Разнообразие</strong> — в начале ленты не больше двух статей одного автора.</li>
+      </ul>
+      <small>Прочитанное смещается ниже. Настройте ленту фильтрами сверху.</small>
+    </div>
+
+    <div class="right-foot">
+      <a href="{{ url_for('sitemap_xml') }}">Карта сайта</a>
+      <a href="{{ url_for('feed_rss') }}">RSS</a>
+      <a href="{{ url_for('index') }}">О проекте</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}
